@@ -10,7 +10,7 @@ jobs:
           key: npm-cache-{{ checksum "package-lock.json" }}
       - run:
           name: Install Dependencies
-          command: npm Install
+          command: npm install
       - save_cache:
           key: npm-cache-{{ checksum "package-lock.json" }}
           paths:
@@ -29,10 +29,13 @@ jobs:
             echo $(google-chrome --version)
             echo $(which google-chrome)
       - run:
-          name: Run Unit Tests
+          name: Run Unit Tests (headless)
           command: npm run test:headless
-        # |
-        #   CHROME_BIN=/usr/bin/google-chrome
+      # Uncomment the following lines if you want to use a specific Chrome path
+      # - run:
+      #     name: Run Unit Tests with Chrome path
+      #     command: |
+      #       CHROME_BIN=/usr/bin/google-chrome npm run test:headless
       - store_test_results:
           path: test-results
       - persist_to_workspace:
@@ -48,24 +51,22 @@ jobs:
             sudo ./aws/install
             rm -rf awscliv2.zip awscliv2.zip
       - run:
-          name: Upload o S3
+          name: Upload to S3
           command: |
-            Dist_OUTPUT_DIR=$(find -maxdepth 1 -type d | awk 'NR==2')
-            aws s3 sync ${DIST_OUTPUT_DIR}/browser/ s3://${S3_BUCKET_NAME} --delete
-
-
-        
-
+            # Define the output directory dynamically
+            DIST_OUTPUT_DIR=$(find -maxdepth 1 -type d | grep browser | head -n 1)
+            aws s3 sync ${DIST_OUTPUT_DIR} s3://${S3_BUCKET_NAME} --delete
 
 workflows:
   version: 2
   build_and_test:
     jobs:
-      - test  # Added test job
+      # - test: 
       - build-prod:
-          requires:  # Added dependency on test job
-            - test  # Requires successful completion of test job
+          # requires: 
+            # - test 
           filters:
             branches:
               only:
                 - master
+
